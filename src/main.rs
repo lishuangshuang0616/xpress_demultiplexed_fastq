@@ -63,11 +63,11 @@ impl Write for OutputWriter {
 
 fn get_writer(path: &Path, compress: bool) -> Result<OutputWriter> {
     let file = File::create(path).with_context(|| format!("Failed to create output file {:?}", path))?;
-    // Hardcoded buffer size 64KB
-    let buf_writer = BufWriter::with_capacity(65536, file);
+    // Increased buffer size to 512KB
+    let buf_writer = BufWriter::with_capacity(512 * 1024, file);
 
     if compress {
-        // Hardcoded compression level 3
+        // Use fast compression (level 1) for speed
         Ok(OutputWriter::Compressed(Box::new(GzEncoder::new(
             buf_writer,
             Compression::new(3),
@@ -80,8 +80,8 @@ fn get_writer(path: &Path, compress: bool) -> Result<OutputWriter> {
 // Helper to open a FASTQ reader that handles both .gz and plain text
 fn get_reader(path: &Path) -> Result<fastq::Reader<BufReader<Box<dyn std::io::Read + Send>>>> {
     let file = File::open(path).with_context(|| format!("Failed to open input file {:?}", path))?;
-    // Buffer the file input to improve decompression speed
-    let file_buf = BufReader::with_capacity(64 * 1024, file);
+    // Buffer the file input to improve decompression speed (512KB)
+    let file_buf = BufReader::with_capacity(512 * 1024, file);
     
     let reader: Box<dyn std::io::Read + Send> = if path.extension().and_then(|s| s.to_str()) == Some("gz") {
         // flate2's MultiGzDecoder works best with a buffered reader
