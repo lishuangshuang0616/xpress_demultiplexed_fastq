@@ -55,8 +55,8 @@ pub fn build_sample_jobs(
             }
             _ => {
                 eprintln!(
-                    "Error: Barcode {} -> Could not find pair for barcode ID '{}' in directory.",
-                    sample.barcode_id, sample.barcode_id
+                    "Warning: Barcode {} -> missing R1 or R2, skipping this sample.",
+                    sample.barcode_id
                 );
                 unresolved += 1;
             }
@@ -64,9 +64,15 @@ pub fn build_sample_jobs(
     }
 
     if unresolved > 0 {
-        return Err(anyhow::anyhow!(
-            "Could not resolve R1/R2 pairs for {} samples. Please check file naming rules.",
+        eprintln!(
+            "Warning: {} sample(s) skipped due to missing R1/R2 pairs.",
             unresolved
+        );
+    }
+
+    if sample_jobs.is_empty() {
+        return Err(anyhow::anyhow!(
+            "No valid sample pairs found. Nothing to process."
         ));
     }
 
